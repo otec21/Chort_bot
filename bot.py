@@ -199,14 +199,8 @@ def handle_audio(message):
 #         response = random.choice(MUSIC_RESPONSES)
         response = llm_music_request(audio_info.performer, audio_info.title)
         # Формируем полный ответ
-        full_response = f"""
-🎧 <b>О музло, {message.from_user.first_name}!</b>
-
-{track_info}
-{response}
-
-<i>ID трека: {audio_info.file_id}</i>
-        """
+        full_response = f"""🎧
+{response}"""
         
         # Отправляем ответ
         bot.reply_to(message, full_response, parse_mode='HTML')
