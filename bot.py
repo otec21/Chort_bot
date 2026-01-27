@@ -2,10 +2,13 @@ import telebot
 from telebot import types
 import random
 from datetime import datetime
+import requests
+import json
+import pprint
 
 # Токен вашего бота (замените на свой)
-BOT_TOKEN = '8333015622:AAHOBm8HArPWqFPw4BtxaRkGI4HT4fsJd9w'
-
+BOT_TOKEN = 'PASTE_YOUR_TG_TOKEN_HERE'
+LLM_TOKEN = 'PASTE_YOUR_LLM_TOKEN_HERE'
 # Инициализация бота
 bot = telebot.TeleBot(BOT_TOKEN)
 
@@ -29,6 +32,28 @@ MUSIC_RESPONSES = [
     "Это все понятно, а Цоя можешь?",
     "О, ну даже можно послушать",
     "Три вещи отпугивают девушек: девственные усики, задротство и метал.",
+]
+
+MUSIC_SOMMELIER_SUFFIX = [
+    "ругайся как пьяный байкер",
+    "делай вид, будто 30 лет назад окончил консерваторию по классу фортепиано",
+    "помни, что руководил хором при правительстве",
+    "говори как сказал бы Курт Кобейн",
+    "ругайся как Джигурда",
+    "говори как Волочкова, упоминай балет",
+    "говори как Паук Сергей Троицкий",
+    "ругайся как ганста-реппер",
+    "говори что Отец может и получше чем эта хуета",
+    "пообещай сообщить в дурку о происходящем",
+    "взывай к здравому смыслу",
+    "веди себя как фанатка Сергея Лазарева",
+    "говори как сказал бы Snoop Dog",
+    "попробуй сравнить это с классической музыкой",
+    "разговаривай как Тони Сопрано из сериала",
+    "пиши стихи в стиле Маяковского",
+    "пиши стихи в стиле Пушкина",
+    "пиши стихи в стиле Есенина",
+    "пиши стихи в стиле Басты"
 ]
 
 # Словарь с ответами на ключевые слова
@@ -171,8 +196,8 @@ def handle_audio(message):
             track_info += f"<b>Длительность:</b> {minutes}:{seconds:02d}\n"
         
         # Выбираем случайный ответ
-        response = random.choice(MUSIC_RESPONSES)
-        
+#         response = random.choice(MUSIC_RESPONSES)
+        response = llm_music_request(audio_info.performer, audio_info.title)
         # Формируем полный ответ
         full_response = f"""
 🎧 <b>О музло, {message.from_user.first_name}!</b>
@@ -219,6 +244,27 @@ def handle_audio_document(message):
     response = random.choice(responses)
     bot.reply_to(message, response)
 
+def llm_music_request(performer, title):
+    request = f"Оцени песню '{title}' исполнителя '{performer}' в 30 словах. При этом " + random.choice(MUSIC_SOMMELIER_SUFFIX)
+    print("Request: " + request)
+    llm_response = requests.post(
+      url="https://openrouter.ai/api/v1/chat/completions",
+      headers={
+        "Authorization": f"Bearer {LLM_TOKEN}",
+      },
+      data=json.dumps({
+        "model": "tngtech/deepseek-r1t2-chimera:free", # Optional
+        "messages": [
+          {
+            "role": "user",
+            "content": request
+          }
+        ]
+      })
+    )
+    response = llm_response.json()['choices'][0]['message']['content']
+    print("Response: " + response)
+    return response
 
 
 # Запуск бота
