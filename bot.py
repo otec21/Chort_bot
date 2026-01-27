@@ -34,7 +34,8 @@ MUSIC_RESPONSES = [
     "Три вещи отпугивают девушек: девственные усики, задротство и метал.",
 ]
 
-MUSIC_SOMMELIER_SUFFIX = [
+LLM_SUFFIX = ". При этом "
+LLM_SUFFIXES = [
     "ругайся как пьяный байкер",
     "делай вид, будто 30 лет назад окончил консерваторию по классу фортепиано",
     "помни, что руководил хором при правительстве",
@@ -54,6 +55,36 @@ MUSIC_SOMMELIER_SUFFIX = [
     "пиши стихи в стиле Пушкина",
     "пиши стихи в стиле Есенина",
     "пиши стихи в стиле Басты"
+]
+
+PERSONS = [
+    "пьяный байкер",
+    "будто 30 лет назад окончил консерваторию по классу фортепиано",
+    "будто руководил хором при правительстве",
+    "сказал бы Курт Кобейн",
+    "Джигурда",
+    "Волочкова, упоминай балет",
+    "Паук Сергей Троицкий",
+    "ганста-реппер",
+    "фанатка Сергея Лазарева",
+    "Snoop Dog",
+    "Тони Сопрано из сериала",
+    "Маяковский",
+    "Пушкин",
+    "Есенин",
+    "Баста",
+    "врач из психиатрической клиники"
+]
+
+ACTIONS = [
+    "выёбывайся",
+    "ругайся",
+    "пиши стихи",
+    "попробуй сравнить это с классической музыкой",
+    "рассказывай",
+    "взывай к здравому смыслу",
+    "веди себя",
+    "расскажи историю про это"
 ]
 
 # Словарь с ответами на ключевые слова
@@ -99,8 +130,9 @@ PREDICTIONS = [
 
 @bot.message_handler(func=lambda message: 'дай предсказание' in message.text.lower())
 def give_prediction_simple(message):
-    prediction = random.choice(PREDICTIONS)
-    bot.reply_to(message, f"🔮 {prediction}")
+    request = "Дай предсказание как пройдет день как сделал бы это " + random.choice(PERSONS) + ", используя для настроения '" + random.choice(PREDICTIONS) + "' при этом " + random.choice(ACTIONS) + " и уложись в 30 слов"
+    response = llm_request(request)
+    bot.reply_to(message, f"🔮 {response}")
 
 
 # Обработчик команды /start и /help
@@ -147,13 +179,15 @@ def handle_all_messages(message):
     if found_keywords:
         # Если найдено несколько ключевых слов, отвечаем на все
         if len(found_keywords) > 1:
-            response = f"{message.from_user.first_name}"
+            vibe = f"{message.from_user.first_name}"
             for keyword in found_keywords:
-                response += f"{RESPONSES[keyword]}\n\n"
+                vibe += f"{RESPONSES[keyword]}\n\n"
         else:
             # Если найден один ключ
-            response = f"{message.from_user.first_name}, {RESPONSES[found_keywords[0]].lower()}"
-            
+            vibe = f"{message.from_user.first_name}, {RESPONSES[found_keywords[0]].lower()}"
+        request = "Ответь на сообщение '" +text+ "' как сделал бы это " + random.choice(PERSONS) + " используя для настроения '" + vibe + "' при этом " + random.choice(ACTIONS) + " и уложись в 30 слов"
+        response = llm_request(request)
+
         bot.reply_to(message, response)
 
 # Команда для проверки работоспособности в группе
@@ -239,7 +273,10 @@ def handle_audio_document(message):
     bot.reply_to(message, response)
 
 def llm_music_request(performer, title):
-    request = f"Оцени песню '{title}' исполнителя '{performer}' в 30 словах. При этом " + random.choice(MUSIC_SOMMELIER_SUFFIX)
+    request = f"Оцени песню '{title}' исполнителя '{performer}' в 30 словах" + LLM_SUFFIX + random.choice(LLM_SUFFIXES)
+    return llm_request(request)
+
+def llm_request(request):
     print("Request: " + request)
     llm_response = requests.post(
       url="https://openrouter.ai/api/v1/chat/completions",
