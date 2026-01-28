@@ -179,9 +179,9 @@ def handle_all_messages(message):
     if found_keywords:
         # Если найдено несколько ключевых слов, отвечаем на все
         if len(found_keywords) > 1:
-            vibe = f"{message.from_user.first_name}"
+            vibe = f"{message.from_user.first_name}, "
             for keyword in found_keywords:
-                vibe += f"{RESPONSES[keyword]}\n\n"
+                vibe += f"{RESPONSES[keyword]}.\n"
         else:
             # Если найден один ключ
             vibe = f"{message.from_user.first_name}, {RESPONSES[found_keywords[0]].lower()}"
@@ -288,7 +288,7 @@ def llm_request(request):
         "messages": [
           {
             "role": "user",
-            "content": request
+            "content": request + ". Не упоминай полученное количество слов"
           }
         ]
       })
